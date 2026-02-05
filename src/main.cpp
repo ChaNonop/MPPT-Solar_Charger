@@ -6,12 +6,12 @@
 
 #ifdef ESP32
   #include <WiFi.h>
-  #define POT_PIN 34       // ขา Analog ของ ESP32
+  #define POT_PIN 34      
   #define DEVICE_ID "ESP32_Board"
-  
+
 #elif defined(ESP8266)
   #include <ESP8266WiFi.h>
-  #define POT_PIN A0       // ESP8266 มีขา Analog ขาเดียวคือ A0
+  #define POT_PIN A0       
   #define DEVICE_ID "ESP8266_Board"
 #endif
 
@@ -34,12 +34,12 @@ void setup() {
   }
   WiFi.mode(WIFI_STA);
 
-  network.conncetWifi();  // kept name to match Network.h
+  network.conncetWifi(); 
   network.connectMQTT();
 }
 
 void loop(){
-  // 1. ให้ MQTT ทำงานตลอดเวลา (รับค่า / รักษา connection)
+  // ให้ MQTT ทำงานตลอดเวลา
   network.loop_connect_MQTT();
 
   long now = millis();
@@ -48,7 +48,7 @@ void loop(){
 
         uint8_t Resistor = sensor.read_R();
         float voltage = sensor.Convert_voltage();
-        bool btn_state = sensor.readbutton(); // ส่งค่าปุ่ม button
+        bool btn_state = sensor.readbutton(); 
         network.Publish_Sensor(Resistor,voltage,btn_state);
         }
   }

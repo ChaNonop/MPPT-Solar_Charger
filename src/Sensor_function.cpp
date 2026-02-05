@@ -18,7 +18,6 @@ void Sensor::begin() {
 uint8_t Sensor::read_R() {
   int raw = analogRead(_rPin);
 #ifdef ESP32
-  // ESP32 analogRead maybe 0-4095
   raw = constrain(raw, 0, 4095);
   return map(raw, 0, 4095, 0, 255);
 #else
@@ -55,8 +54,8 @@ Led_state::Led_state(uint8_t ledPin) : _ledPin(ledPin) {}
 
 void Led_state::begin(){ 
     pinMode(_ledPin, OUTPUT);
-    digitalWrite(_ledPin, HIGH); // OFF if active LOW (adjust as needed)
+    digitalWrite(_ledPin, HIGH); 
 }
 void Led_state::set(bool on) {
-  digitalWrite(_ledPin, on ? LOW : HIGH); // active LOW by default
+  digitalWrite(_ledPin, on ? LOW : HIGH); // active LOW 
 }
