@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "function.h"
 #include "Network.h"
-#include "config.h"
+#include "secret.h"
 #include "Pin.h"
 
 #ifdef ESP32

@@ -1,4 +1,5 @@
 #include "Network.h"
+#include "secret.h"
 #include <Arduino.h>
 
 // Global pointer สำหรับ callback wrapper

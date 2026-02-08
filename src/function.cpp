@@ -148,6 +148,14 @@ float Sensor::Convert_voltage() {
   return v;
 }
 
+uint8_t Sensor::read_Current() {
+  return 0; // คืนค่า 0 ไปก่อน
+}
+
+uint8_t Sensor::read_temp() {
+  return 0; // คืนค่า 0 ไปก่อน
+}
+
 // == Class led ===
 Led_state::Led_state(uint8_t ledPin) : _ledPin(ledPin), _ledState(false){}
 
