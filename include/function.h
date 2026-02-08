@@ -33,7 +33,7 @@ public:
 
   const char*getName() const; // ดึงชื่อปุ่ม
   uint8_t getPin() const;    // ดึงหมายเลข pin
-  bool isPressed() const;   // เช็คว่าปุ่มถูกกดหรือไม่
+  bool isPressed() ;   // เช็คว่าปุ่มถูกกดหรือไม่
 }; 
 
 // === Class Snesor ===
@@ -42,14 +42,7 @@ private:
   uint8_t _rPin;
 
 public:
-  Sensor(){
-    read_R();
-    Convert_voltage();
-    read_Current();
-    read_temp();
-  };
   Sensor();
-  
   void begin();
   // bool readbutton();
 

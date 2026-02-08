@@ -89,7 +89,7 @@ const char* Button::getName() const {
 uint8_t Button::getPin() const {
   return _config.Button_Pin;
 }
-bool Button::isPressed() const {
+bool Button::isPressed() {
   bool s = false;
   #ifdef ESP32
   portENTER_CRITICAL(&mux);
@@ -99,7 +99,10 @@ bool Button::isPressed() const {
   portEXIT_CRITICAL(&mux);
   
   #else
+  noInterrupts();
   s = _buttonState;
+  _buttonState = false;
+  interrupts();
   #endif
   return s;
 }
