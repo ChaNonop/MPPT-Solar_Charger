@@ -56,4 +56,32 @@ void loop(){
       }
 }
 
+<<<<<<< HEAD
   
+=======
+
+// void callback(char* topic, byte* payload, unsigned int length) {
+//   Serial.print("Message arrived [");
+//   Serial.print(topic);
+//   Serial.print("] ");
+
+//   String message;
+//   for (unsigned int i = 0; i < length; i++) {
+//     message = message + char(payload[i]);
+//   }
+//   Serial.println(message);
+
+//   // Subscribe /Command
+//   if(String(topic) == "/Command") {
+//     // รองรับทั้ง "ON" และ "1"
+//     if (message == "ON" || message == "1"){
+//       digitalWrite(LED_1, HIGH);
+//       Serial.println("LED ON"); 
+//     }
+//     else if (message == "OFF" || message == "0") {
+//       digitalWrite(LED_1, LOW);   
+//       Serial.println("LED OFF"); 
+//     }
+//   } 
+// }
+>>>>>>> 6f8c116049c4be4e84d56c42b5865da491d909f4
