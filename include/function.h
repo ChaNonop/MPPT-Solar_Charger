@@ -4,30 +4,39 @@
 #include <Arduino.h>
 #include "Pin.h"
 
-Class Button{
+class Button{
 private:
   Config _config;
   volatile bool _pressed;
-  volatile unsigned long _lastInterruptTime; //เวลาที่เกิด interrupt
+  volatile unsigned long _buttonState;; //เวลาที่เกิด interrupt
+  volatile unsigned long _lastInterruptTime;
 
   // Callback function pointer 
-  void (*Butonn_callback)();
+  void (*_Butonn_callback)();
 
   // Mutex สำหรับ thread safety
-  portMUX_TYPE mux;
+  #ifdef ESP32
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  #endif
+
 public:
-  Button(const Config& _config);
+  Button(const Config& config);
   // เริ่มต้นการทำงาน - แนบ ISR
   void button_begin(void (*button_isr)());
   void setCallback(void (*callback)());
-  voide IRAM_ATTR handleInterrupt();
+  #ifdef ESP32
+  void IRAM_ATTR handleInterrupt();
+  #else
+  void ICACHE_RAM_ATTR handleInterrupt();
+  #endif
   void update();
 
-  cosnt char*getName() const; // ดึงชื่อปุ่ม
+  const char*getName() const; // ดึงชื่อปุ่ม
   uint8_t getPin() const;    // ดึงหมายเลข pin
   bool isPressed() const;   // เช็คว่าปุ่มถูกกดหรือไม่
 }; 
 
+// === Class Snesor ===
 class Sensor {
 private:
   uint8_t _rPin;
@@ -39,12 +48,9 @@ public:
     read_Current();
     read_temp();
   };
-
-  Sensor(uint8_t read_R,uint8_t rPin,
-    float Convert_voltage,uint8_t read_Current,uint8_t read_temp);
+  Sensor();
   
   void begin();
-  // bool interrupt_button_set();
   // bool readbutton();
 
   uint8_t read_R();
@@ -53,13 +59,15 @@ public:
   uint8_t read_temp();
 };
 
-// class Led_state {
-// public:
-//   Led_state(uint8_t ledPin);
-//   void begin();
-//   void set(bool on);
-// private:
-//   uint8_t _ledPin;
-// };
+class Led_state {
+public:
+  Led_state(uint8_t ledPin);
+  void begin();
+  void set(bool on);
+  void toggle();
+private:
+  uint8_t _ledPin;
+  bool _ledState;
+};
 
 #endif 

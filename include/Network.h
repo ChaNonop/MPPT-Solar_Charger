@@ -2,6 +2,7 @@
 #define NETWORK_H
 
 #include <Arduino.h>
+
 #ifdef ESP32
   #include <WiFi.h>
 #elif defined(ESP8266)
@@ -9,7 +10,6 @@
 #endif
 
 #include <PubSubClient.h>
-
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
@@ -21,7 +21,9 @@ class Network {
 private:
   WiFiClient _espClient;
   PubSubClient _client;
-  WiFiUDP ntp;
+  WiFiUDP _ntp;
+  NTPClient* _timeClient; // ใช้ Pointer เพื่อจัดการ Object
+
   void reconnectMQTT();
 
 public:
@@ -32,7 +34,6 @@ public:
   void loop_connect_MQTT();
   void Publish_Sensor(uint8_t resistor, float voltage, bool buttonState);
   void Callback(char* topic, uint8_t* payload, unsigned int length); // made public
-
 };
 
 #endif 

@@ -1,6 +1,7 @@
 #include "Network.h"
 #include <Arduino.h>
 
+// Global pointer สำหรับ callback wrapper
 static Network* _net_instance = nullptr;
 
 void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
@@ -11,81 +12,102 @@ Network::Network() : _client(_espClient) {
   _net_instance = this;
   _client.setServer(MQTT_SERVER, MQTT_PORT);
   _client.setCallback(mqttCallback);
+  _timeClient = new NTPClient(_ntp, "asia.pool.ntp.org", 7*3600, 60000);   // Init NTP Client (ยังไม่ start) 
 }
 void Network::ntp_setup() {
-  NTPClient timeClient(ntp);
-  NTPClient timeClient(ntp,"asia.pool.ntp.org",7*3600, 14*24*60*60000); //set time server thailand ให้อัปเดตทุกๆ 2 สัปดาห์
-  timeClient.begin();
-  while (!timeClient.update()) {
-    timeClient.forceUpdate();
+  _timeClient->begin();
+  if(!_timeClient->update()){
+    _timeClient->forceUpdate();
   }
-  String formattedTime = timeClient.getFormattedTime(); // ทำเป็นตัวแปร string เก็บข้อมูลวัน
-  Serial.println(formattedTime);
+  Serial.printf("Current Time: %s\n",_timeClient->getFormattedTime());
   }
 
 void Network::conncetWifi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting WiFi");
+  Serial.print(F("Connecting WiFi"));
+
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
-    if (millis() - start > 15000) break; // timeout
+    if (millis() - start > 20000) { // timeout 20s
+      break; // timeout 
+    } 
   }
-  Serial.println();
-  Serial.print("WiFi Status: ");
-  Serial.println(WiFi.status());
+  if(WiFi.status() == WL_CONNECTED){
+      Serial.print(F("\nWiFi Connected, IP: "));
+      Serial.println(WiFi.localIP());
+  }
 }
 
 void Network::connectMQTT() {
+  // เรียกครั้งแรก หรือเรียกเมื่อต้องการเช็ค
   if (!_client.connected()) {
     reconnectMQTT();
   }
 }
 
 void Network::reconnectMQTT() {
-  while (!_client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    if (_client.connect(MQTT_CLIENT, MQTT_USER, MQTT_PASS)) {
-      Serial.println("connected");
-      _client.subscribe("/Command");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(_client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
+  // ใช้ static variable เพื่อจำค่าเวลาครั้งล่าสุดที่ลองเชื่อมต่อ (Non-blocking Timer)
+  static unsigned long lastReconnectAttempt = 0;
+  unsigned long now = millis();
+
+  // เช็คว่าผ่านไป 5 วินาทีหรือยัง? ถ้ายังไม่ถึง ให้ข้ามไปเลย (ไม่บล็อกระบบ)
+  if (now - lastReconnectAttempt > 5000) {
+    lastReconnectAttempt = now; // อัปเดตเวลาล่าสุด
+
+    if (!_client.connected()) {
+      Serial.print(F("Attempting MQTT connection..."));
+      // Create a random client ID
+      String clientId = MQTT_CLIENT;
+      clientId += String(random(0xffff), HEX);
+      
+      // ลองเชื่อมต่อ (คำสั่ง connect )
+      if (_client.connect(clientId.c_str(), MQTT_USER, MQTT_PASS)) {
+        Serial.print(F("connected\n"));
+        _client.subscribe("/Command");
+        lastReconnectAttempt = 0; // รีเซ็ตเวลาเพื่อให้ครั้งหน้าพร้อมทำงานทันทีถ้าหลุดอีก
+      } else {
+        Serial.printf("failed, rc= %d\n",_client.state());
+        Serial.print(F(" (try again in 5 seconds)\n"));
+      }
     }
   }
 }
 
 void Network::loop_connect_MQTT() {
+  // เช็คและพยายามเชื่อมต่อใหม่แบบ Non-blocking
   if (!_client.connected()) {
     reconnectMQTT();
   }
   _client.loop();
+  _timeClient->update();
 }
 
 void Network::Publish_Sensor(uint8_t resistor, float voltage, bool buttonState) {
   char payload[128];
-  int len = snprintf(payload, sizeof(payload), "{\"res\":%u,\"v\":%.3f,\"btn\":%u}", resistor, voltage, buttonState ? 1 : 0);
+
+  int len = snprintf(payload, sizeof(payload), "{\"res\":%u,\"v\":%.3f,\"button_state\":%u}", resistor, voltage, buttonState ? 1 : 0);
+  
   _client.publish("/sensor", payload, (unsigned int)len);
+  Serial.printf("Published: %c \n",payload);
 }
 
+// Subscribe 
 void Network::Callback(char* topic, uint8_t* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
+  Serial.printf("Message arrived [%c]",topic);
   String message;
   for (unsigned int i = 0; i < length; i++) {
     message += (char)payload[i];
   }
-  Serial.println(message);
+  Serial.printf(" %s\n", message);
+  
   if (String(topic) == "/Command") {
     if (message == "ON" || message == "1") {
-      Serial.println("Command: ON");
+      Serial.print(F("Command: ON\n"));
     } else if (message == "OFF" || message == "0") {
-      Serial.println("Command: OFF");
+      Serial.print(F("Command: OFF\n"));
     }
   }
 }

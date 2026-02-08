@@ -16,72 +16,83 @@
 #endif
 
 // สร้าง Objects
-Sensor sensor();
-// Sensor sensor;
+Sensor sensor;
 Network network;
 Led_state led(led_Pin);
+
+
+//===== สร้าง BUTTON OBJECTS =====
+// สร้าง object จาก config ที่กำหนดไว้ใน PinConfig.h
+Button buttonUp(PinConfig::ButtonUp);
+Button buttonDown(PinConfig::ButtonDown);
+Button buttonLeft(PinConfig::Buttonleft);
+Button buttonRight(PinConfig::ButtonRight);
 
 unsigned long lastMsg = 0;
 const long interval = 10000; // 10 วินาที
 
+// --- ISR Wrapper Functions ---
+// เราต้องแยกฟังก์ชัน ISR ของแต่ละปุ่ม เพื่อให้รู้ว่าปุ่มไหนถูกกด
+// เพราะ attachInterrupt ต้องการฟังก์ชัน void func() ที่ไม่มี parameter
+void IRAM_ATTR ISR_Up() {
+  buttonUp.handleInterrupt();
+}
+void IRAM_ATTR ISR_Down() {
+  buttonDown.handleInterrupt();
+}
+void IRAM_ATTR ISR_Left() {
+  buttonLeft.handleInterrupt();
+}
+void IRAM_ATTR ISR_Right() {
+  buttonRight.handleInterrupt();
+}
+
+
 void setup() {
   Serial.begin(115200);
-
-  sensor.begin();
-  led.begin();
-  
-  while (!Serial){
+    while (!Serial){
     delay(10);
   }
-  WiFi.mode(WIFI_STA);
+  // 1. Setup Buttons & Attach ISRs
+  buttonUp.button_begin(ISR_Up);
+  buttonDown.button_begin(ISR_Down);
+  buttonLeft.button_begin(ISR_Left);
+  buttonRight.button_begin(ISR_Right);
 
+  // 3. setup Component
+  sensor.begin();
+  // led.begin();
+
+  //4. setup Network
+  WiFi.mode(WIFI_STA);
   network.conncetWifi(); 
   network.connectMQTT();
-  sensor.interupt_button_set();
   network.ntp_setup();
 }
 
 void loop(){
-  // ให้ MQTT ทำงานตลอดเวลา
+  // 1. ให้ MQTT ทำงานตลอดเวลา
   network.loop_connect_MQTT();
 
-  long now = millis();
+  // 2. Update Buttons (เช็คสถานะจาก ISR ใน main loop)
+  buttonUp.update();
+  buttonDown.update();
+  buttonLeft.update();
+  buttonRight.update();
+
+  unsigned long now = millis();
     if (now - lastMsg > interval) { //จับเวลาส่งข้อมูลทุก ๆ 10 วินาที
         lastMsg = now;
 
         uint8_t Resistor = sensor.read_R();
         float voltage = sensor.Convert_voltage();
-        bool btn_state = sensor.readbutton(); 
+
+        // ตัวอย่าง: เช็คสถานะปุ่มใดปุ่มหนึ่งเพื่อส่งขึ้น MQTT (หรือจะส่ง flag อื่นๆ)
+        bool btn_state = buttonUp.isPressed();
+
         network.Publish_Sensor(Resistor,voltage,btn_state);
+        led.toggle();
       }
 }
 
-<<<<<<< HEAD
   
-=======
-
-// void callback(char* topic, byte* payload, unsigned int length) {
-//   Serial.print("Message arrived [");
-//   Serial.print(topic);
-//   Serial.print("] ");
-
-//   String message;
-//   for (unsigned int i = 0; i < length; i++) {
-//     message = message + char(payload[i]);
-//   }
-//   Serial.println(message);
-
-//   // Subscribe /Command
-//   if(String(topic) == "/Command") {
-//     // รองรับทั้ง "ON" และ "1"
-//     if (message == "ON" || message == "1"){
-//       digitalWrite(LED_1, HIGH);
-//       Serial.println("LED ON"); 
-//     }
-//     else if (message == "OFF" || message == "0") {
-//       digitalWrite(LED_1, LOW);   
-//       Serial.println("LED OFF"); 
-//     }
-//   } 
-// }
->>>>>>> 6f8c116049c4be4e84d56c42b5865da491d909f4
