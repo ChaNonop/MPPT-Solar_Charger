@@ -4,7 +4,7 @@
 static Network* _net_instance = nullptr;
 
 void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
-  if (_net_instance) _net_instance->handleCallback(topic, payload, length);
+  if (_net_instance) _net_instance->Callback(topic, payload, length);
 }
 
 Network::Network() : _client(_espClient) {
@@ -12,6 +12,16 @@ Network::Network() : _client(_espClient) {
   _client.setServer(MQTT_SERVER, MQTT_PORT);
   _client.setCallback(mqttCallback);
 }
+void Network::ntp_setup() {
+  NTPClient timeClient(ntp);
+  NTPClient timeClient(ntp,"asia.pool.ntp.org",7*3600, 14*24*60*60000); //set time server thailand ให้อัปเดตทุกๆ 2 สัปดาห์
+  timeClient.begin();
+  while (!timeClient.update()) {
+    timeClient.forceUpdate();
+  }
+  String formattedTime = timeClient.getFormattedTime(); // ทำเป็นตัวแปร string เก็บข้อมูลวัน
+  Serial.println(formattedTime);
+  }
 
 void Network::conncetWifi() {
   WiFi.mode(WIFI_STA);
@@ -62,7 +72,7 @@ void Network::Publish_Sensor(uint8_t resistor, float voltage, bool buttonState) 
   _client.publish("/sensor", payload, (unsigned int)len);
 }
 
-void Network::handleCallback(char* topic, uint8_t* payload, unsigned int length) {
+void Network::Callback(char* topic, uint8_t* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");

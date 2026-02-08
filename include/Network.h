@@ -7,22 +7,32 @@
 #elif defined(ESP8266)
   #include <ESP8266WiFi.h>
 #endif
+
 #include <PubSubClient.h>
+
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+
+#include <U8g2lib.h>
+
 #include "config.h"
 
 class Network {
+private:
+  WiFiClient _espClient;
+  PubSubClient _client;
+  WiFiUDP ntp;
+  void reconnectMQTT();
+
 public:
   Network();
+  void ntp_setup();
   void conncetWifi();           // intentionally keep typo to match main.cpp usage
   void connectMQTT();
   void loop_connect_MQTT();
   void Publish_Sensor(uint8_t resistor, float voltage, bool buttonState);
-  void handleCallback(char* topic, uint8_t* payload, unsigned int length); // made public
+  void Callback(char* topic, uint8_t* payload, unsigned int length); // made public
 
-private:
-  WiFiClient _espClient;
-  PubSubClient _client;
-  void reconnectMQTT();
 };
 
 #endif 
