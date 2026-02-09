@@ -4,14 +4,13 @@
 #include "secret.h"
 #include "Pin.h"
 #include <WiFi.h>
-
-#define POT_PIN 34      
+   
 #define DEVICE_ID "ESP32_Board"
 
 // สร้าง Objects
 Sensor sensor;
 Network network;
-// Led_state led(led_Pin);
+Led_state led(led_Pin);
 
 
 //===== สร้าง BUTTON OBJECTS =====
@@ -78,7 +77,7 @@ void loop(){
         bool btn_state = buttonUp.isPressed();
 
         network.Publish_Sensor(data.Voltage_battery, data.Current, data.Temp,(uint16_t)data.Power, btn_state);
-        // led.toggle();
+        led.toggle();
       }
 }
 

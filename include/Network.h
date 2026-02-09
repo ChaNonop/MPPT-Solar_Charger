@@ -32,7 +32,7 @@ public:
   void conncetWifi();           // intentionally keep typo to match main.cpp usage
   void connectMQTT();
   void loop_connect_MQTT();
-  void Publish_Sensor(uint8_t resistor, float voltage, bool buttonState);
+  void Publish_Sensor(float volatge_solar,float voltage_battery,float current, float temp, int power, bool buttonState);
   void Callback(char* topic, uint8_t* payload, unsigned int length); // made public
 };
 

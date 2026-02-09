@@ -1,7 +1,7 @@
 #include "function.h"
 #include <Arduino.h>
 
-// ===Class Button===
+// === Class Button ===
 Button::Button(const Config& config) 
   : _config(config), 
     _buttonState(false),
@@ -146,7 +146,7 @@ void Algorithm::MPPT_Process(){}
 void Algorithm::Control_PWM(){}
 
 
-//== Class led ===
+// == Class led ===
 Led_state::Led_state(uint8_t ledPin) : _ledPin(ledPin), _ledState(false){}
 
 void Led_state::begin(){ 

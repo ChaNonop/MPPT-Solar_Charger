@@ -86,16 +86,17 @@ void Network::loop_connect_MQTT() {
   _timeClient->update();
 }
 
-void Network::Publish_Sensor(uint8_t resistor, float voltage, bool buttonState) {
-  char payload[128];
+void Network::Publish_Sensor(float volatge_solar,float voltage_battery,float current, float temp, int power, bool buttonState) {
+
+  char payload[200];
 
   // ดึงเวลาปัจจุบัน (Unix Timestamp)
   unsigned long epochTime = _timeClient->getEpochTime();
 
   // Send Data Json format
   int len = snprintf(payload, sizeof(payload), 
-            "{\"res\":%u,\"v\":%.3f,\"button_state\":%u,\"time(ms)\":%lu}",
-             resistor, voltage, buttonState ? 1 : 0, epochTime);
+            "{\"Voltage_solar\":%.2f,\"Voltage_battery\":%.2f,\"Current\":%.2f,\"Temp\":%.2f,\"Power\":%dv\":%.2f,\"button_state\":%u,\"time(ms)\":%lu}",
+             volatge_solar, voltage_battery, current, temp, power,buttonState ? 1 : 0, epochTime);
   
   _client.publish("/MyProject/sensor", payload, (unsigned int)len);
   Serial.printf("Published: %c \n",payload);

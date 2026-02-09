@@ -5,7 +5,6 @@
 #include "Pin.h"
 
 #define NUM_SENSOR 4
-// #define Volatge_LEFEPO4 14.4
 
 struct SensorData { //ค่าที่จะส่งผ่าน broker
   // int rawValue;
