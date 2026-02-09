@@ -3,17 +3,16 @@
 #include "Network.h"
 #include "secret.h"
 #include "Pin.h"
+#include <WiFi.h>
 
-#ifdef ESP32
-  #include <WiFi.h>
-  #define POT_PIN 34      
-  #define DEVICE_ID "ESP32_Board"
+#define POT_PIN 34      
+#define DEVICE_ID "ESP32_Board"
 
-#elif defined(ESP8266)
-  #include <ESP8266WiFi.h>
-  #define POT_PIN A0       
-  #define DEVICE_ID "ESP8266_Board"
-#endif
+// #elif defined(ESP8266)
+//   #include <ESP8266WiFi.h>
+//   #define POT_PIN A0       
+//   #define DEVICE_ID "ESP8266_Board"
+// #endif
 
 // สร้าง Objects
 Sensor sensor;
@@ -80,13 +79,12 @@ void loop(){
   buttonLeft.update();
   buttonRight.update();
 
+  sensor.update();
+
+
   unsigned long now = millis();
     if (now - lastMsg > interval) { //จับเวลาส่งข้อมูลทุก ๆ 10 วินาที
         lastMsg = now;
-
-        uint8_t Resistor = sensor.read_R();
-        float voltage = sensor.Convert_voltage();
-
         // ตัวอย่าง: เช็คสถานะปุ่มใดปุ่มหนึ่งเพื่อส่งขึ้น MQTT (หรือจะส่ง flag อื่นๆ)
         bool btn_state = buttonUp.isPressed();
 
