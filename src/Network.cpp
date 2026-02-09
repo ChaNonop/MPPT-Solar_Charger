@@ -13,7 +13,7 @@ Network::Network() : _client(_espClient) {
   _net_instance = this;
   _client.setServer(MQTT_SERVER, MQTT_PORT);
   _client.setCallback(mqttCallback);
-  _timeClient = new NTPClient(_ntp, "asia.pool.ntp.org", 7*3600, 60000);   // Init NTP Client (ยังไม่ start) 
+  _timeClient = new NTPClient(_ntp, "asia.pool.ntp.org", 7*3600, 86400000*2);   // Init NTP Client (ยังไม่ start)  อัปเดต 2 วันครั้ง
 }
 void Network::ntp_setup() {
   _timeClient->begin();
@@ -89,9 +89,15 @@ void Network::loop_connect_MQTT() {
 void Network::Publish_Sensor(uint8_t resistor, float voltage, bool buttonState) {
   char payload[128];
 
-  int len = snprintf(payload, sizeof(payload), "{\"res\":%u,\"v\":%.3f,\"button_state\":%u}", resistor, voltage, buttonState ? 1 : 0);
+  // ดึงเวลาปัจจุบัน (Unix Timestamp)
+  unsigned long epochTime = _timeClient->getEpochTime();
+
+  // Send Data Json format
+  int len = snprintf(payload, sizeof(payload), 
+            "{\"res\":%u,\"v\":%.3f,\"button_state\":%u,\"time(ms)\":%lu}",
+             resistor, voltage, buttonState ? 1 : 0, epochTime);
   
-  _client.publish("/sensor", payload, (unsigned int)len);
+  _client.publish("/MyProject/sensor", payload, (unsigned int)len);
   Serial.printf("Published: %c \n",payload);
 }
 
@@ -104,7 +110,7 @@ void Network::Callback(char* topic, uint8_t* payload, unsigned int length) {
   }
   Serial.printf(" %s\n", message);
   
-  if (String(topic) == "/Command") {
+  if (String(topic) == "/MyProject/Command") {
     if (message == "ON" || message == "1") {
       Serial.print(F("Command: ON\n"));
     } else if (message == "OFF" || message == "0") {

@@ -5,43 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar MPPT Dashboard</title>
     
-    <!-- 1. Import Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. Import Chart.js สำหรับวาดกราฟ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Custom CSS (ถ้าต้องการแยกไฟล์ ให้เอาส่วนนี้ไปใส่ style.css) -->
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
-        
-        body {
-            font-family: 'Kanit', sans-serif;
-            background-color: #0f172a; /* Slate 900 */
-            color: #e2e8f0;
-        }
-        
-        .card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1rem;
-            transition: transform 0.2s;
-        }
-        
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(56, 189, 248, 0.5);
-        }
-
-        .glow-text {
-            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="min-h-screen p-4 md:p-8">
 
-    <!-- Header -->
     <header class="mb-8 flex justify-between items-center">
         <div>
             <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 glow-text">
@@ -58,12 +29,9 @@
         </div>
     </header>
 
-    <!-- Main Layout Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- Left Column: I-V Curve Graph (กินพื้นที่ 2 ส่วน) -->
         <div class="lg:col-span-2 space-y-6">
-            <!-- Graph Container -->
             <div class="card p-4 h-[400px] relative">
                 <h2 class="text-xl font-semibold mb-4 text-cyan-300 flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
@@ -74,7 +42,6 @@
                 </div>
             </div>
 
-            <!-- Power Graph Container -->
             <div class="card p-4 h-[250px] relative">
                 <h2 class="text-lg font-semibold mb-2 text-yellow-300">Power Output (Time Series)</h2>
                 <div class="relative h-[180px] w-full">
@@ -83,10 +50,8 @@
             </div>
         </div>
 
-        <!-- Right Column: Real-time Stats (กินพื้นที่ 1 ส่วน) -->
         <div class="lg:col-span-1 space-y-4">
             
-            <!-- Voltage Card -->
             <div class="card p-6 border-l-4 border-yellow-400">
                 <div class="text-slate-400 text-sm uppercase tracking-wider">Panel Voltage</div>
                 <div class="flex justify-between items-end mt-2">
@@ -95,7 +60,6 @@
                 </div>
             </div>
 
-            <!-- Current Card -->
             <div class="card p-6 border-l-4 border-cyan-400">
                 <div class="text-slate-400 text-sm uppercase tracking-wider">Panel Current</div>
                 <div class="flex justify-between items-end mt-2">
@@ -104,7 +68,6 @@
                 </div>
             </div>
 
-            <!-- Power Card -->
             <div class="card p-6 border-l-4 border-green-500 bg-gradient-to-br from-green-900/20 to-transparent">
                 <div class="text-slate-400 text-sm uppercase tracking-wider">Output Power</div>
                 <div class="flex justify-between items-end mt-2">
@@ -113,7 +76,6 @@
                 </div>
             </div>
 
-             <!-- PWM/Info Card -->
              <div class="card p-6 grid grid-cols-2 gap-4">
                 <div>
                     <div class="text-slate-400 text-xs">DUTY CYCLE</div>
@@ -128,145 +90,6 @@
         </div>
     </div>
 
-    <!-- 3. JavaScript Logic (ถ้าต้องการแยกไฟล์ ให้เอาส่วนนี้ไปใส่ script.js) -->
-    <script>
-        // -- Configuration --
-        const MAX_DATA_POINTS = 50; // จำนวนจุดสูงสุดบนกราฟ I-V
-        const MAX_TIME_POINTS = 30; // จำนวนจุดสูงสุดบนกราฟ Power vs Time
-
-        // -- Setup I-V Curve Chart (Scatter Plot) --
-        const ctxIV = document.getElementById('ivCurveChart').getContext('2d');
-        const ivChart = new Chart(ctxIV, {
-            type: 'scatter',
-            data: {
-                datasets: [{
-                    label: 'Operating Point',
-                    data: [],
-                    backgroundColor: 'rgba(34, 211, 238, 1)', // Cyan
-                    borderColor: 'rgba(34, 211, 238, 0.5)',
-                    borderWidth: 2,
-                    showLine: true, // ลากเส้นเชื่อมจุด
-                    pointRadius: 3,
-                    tension: 0.4 // ความโค้งของเส้น
-                },
-                {
-                    label: 'Current Point', // จุดปัจจุบันที่ใหญ่กว่า
-                    data: [],
-                    backgroundColor: 'rgba(250, 204, 21, 1)', // Yellow
-                    pointRadius: 8,
-                    pointHoverRadius: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'linear',
-                        position: 'bottom',
-                        title: { display: true, text: 'Voltage (V)', color: '#94a3b8' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: '#94a3b8' }
-                    },
-                    y: {
-                        title: { display: true, text: 'Current (A)', color: '#94a3b8' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: '#94a3b8' }
-                    }
-                },
-                plugins: {
-                    legend: { labels: { color: '#e2e8f0' } }
-                }
-            }
-        });
-
-        // -- Setup Power vs Time Chart (Line Chart) --
-        const ctxPower = document.getElementById('powerTimeChart').getContext('2d');
-        const powerChart = new Chart(ctxPower, {
-            type: 'line',
-            data: {
-                labels: [], // เวลา
-                datasets: [{
-                    label: 'Power (W)',
-                    data: [],
-                    borderColor: '#4ade80', // Green
-                    backgroundColor: 'rgba(74, 222, 128, 0.2)',
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { display: false }, // ซ่อนแกนเวลาเพื่อความสะอาด
-                    y: {
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: '#94a3b8' },
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: { display: false }
-                },
-                animation: { duration: 0 } // ปิด animation เพื่อ performance ที่ดีเมื่อ update ถี่
-            }
-        });
-
-        // -- Function to Fetch Data --
-        async function fetchData() {
-            try {
-                const response = await fetch('/api/data');
-                const data = await response.json();
-
-                // 1. Update Text UI
-                document.getElementById('val-volt').innerText = data.voltage.toFixed(2);
-                document.getElementById('val-curr').innerText = data.current.toFixed(2);
-                document.getElementById('val-power').innerText = data.power.toFixed(2);
-                document.getElementById('val-duty').innerText = data.duty_cycle;
-
-                // 2. Update I-V Curve Logic
-                // ในความเป็นจริง I-V curve เกิดจากการ Sweep แต่ถ้าเราพลอตจุด V, I สะสมไปเรื่อยๆ 
-                // เราจะเห็นแนวโน้มเส้นโค้ง (Trace)
-                
-                // เพิ่มจุดใหม่
-                ivChart.data.datasets[0].data.push({x: data.voltage, y: data.current});
-                
-                // เรียงลำดับตาม Voltage (เพื่อให้เส้นลากสวยงาม ไม่กระโดดไปมา)
-                ivChart.data.datasets[0].data.sort((a, b) => a.x - b.x);
-
-                // จำกัดจำนวนจุดไม่ให้เยอะเกินไป (Performance)
-                if (ivChart.data.datasets[0].data.length > MAX_DATA_POINTS) {
-                     // ลบจุดที่ Power น้อยสุด หรือสุ่มลบ เพื่อรักษาทรงกราฟ (Simpler: ลบจุดเก่าสุดไม่ได้เพราะ sort แล้ว)
-                     // วิธีง่าย: Reset เมื่อครบ หรือ FIFO (ถ้าไม่ sort)
-                     // ในที่นี้เราจะอนุมานว่าถ้า Voltage เปลี่ยนเยอะ แสดงว่ามีการ Sweep ใหม่ ให้เคลียร์กราฟ
-                     // หรือใช้วิธีลบแบบสุ่ม
-                     ivChart.data.datasets[0].data.splice(0, 1); 
-                }
-
-                // จุดปัจจุบัน (Current Operating Point)
-                ivChart.data.datasets[1].data = [{x: data.voltage, y: data.current}];
-                ivChart.update();
-
-                // 3. Update Power Chart (Time based)
-                const now = new Date().toLocaleTimeString();
-                powerChart.data.labels.push(now);
-                powerChart.data.datasets[0].data.push(data.power);
-
-                if (powerChart.data.labels.length > MAX_TIME_POINTS) {
-                    powerChart.data.labels.shift();
-                    powerChart.data.datasets[0].data.shift();
-                }
-                powerChart.update();
-
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
-        }
-
-        // เรียกข้อมูลทุกๆ 500ms (0.5 วินาที)
-        setInterval(fetchData, 500);
-
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>

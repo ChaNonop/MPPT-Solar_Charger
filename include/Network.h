@@ -23,7 +23,7 @@ private:
   PubSubClient _client;
   WiFiUDP _ntp;
   NTPClient* _timeClient; // ใช้ Pointer เพื่อจัดการ Object
-
+  unsigned long epochTime;
   void reconnectMQTT();
 
 public:
