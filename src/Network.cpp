@@ -23,7 +23,7 @@ void Network::ntp_setup() {
   Serial.printf("Current Time: %s\n",_timeClient->getFormattedTime());
   }
 
-void Network::conncetWifi() {
+void Network::connectWifi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print(F("Connecting WiFi"));
@@ -43,7 +43,6 @@ void Network::conncetWifi() {
 }
 
 void Network::connectMQTT() {
-  // เรียกครั้งแรก หรือเรียกเมื่อต้องการเช็ค
   if (!_client.connected()) {
     reconnectMQTT();
   }
@@ -54,7 +53,7 @@ void Network::reconnectMQTT() {
   static unsigned long lastReconnectAttempt = 0;
   unsigned long now = millis();
 
-  // เช็คว่าผ่านไป 5 วินาทีหรือยัง? ถ้ายังไม่ถึง ให้ข้ามไปเลย (ไม่บล็อกระบบ)
+  // เช็คว่าผ่านไป 5 วินาทีหรือยัง? ถ้ายังไม่ถึง ให้ข้ามไปเลย
   if (now - lastReconnectAttempt > 5000) {
     lastReconnectAttempt = now; // อัปเดตเวลาล่าสุด
 
@@ -86,20 +85,20 @@ void Network::loop_connect_MQTT() {
   _timeClient->update();
 }
 
-void Network::send_Sensor(float volatge_solar,float voltage_battery,float current, float temp, int power, bool buttonState) {
+void Network::Publish_Sensor(float volatge_solar,float voltage_battery,float current, float temp, int power, bool buttonState) {
 
-  char payload[200];
+  char payload[256];
 
   // ดึงเวลาปัจจุบัน (Unix Timestamp)
   unsigned long epochTime = _timeClient->getEpochTime();
 
   // Send Data Json format
   int len = snprintf(payload, sizeof(payload), 
-            "{\"Voltage_solar\":%.2f,\"Voltage_battery\":%.2f,\"Current\":%.2f,\"Temp\":%.2f,\"Power\":%.2f,\"button_state\":%d,\"time(ms)\":%lu}",
-             volatge_solar, voltage_battery, current, temp, power,buttonState ? 1 : 0, epochTime);
+            "{\"Voltage_solar\":%.2f,\"Voltage_battery\":%.2f,\"Current\":%.2f,\"Temp\":%.2f,\"Power\":%d,\"button_state\":%u,\"time_ms\":%lu}",
+             volatge_solar, voltage_battery, current, temp, power, buttonState ? 1 : 0, epochTime);
   
   _client.publish("/MyProject/sensor", payload, (unsigned int)len);
-  Serial.printf("Published: %c \n",payload);
+  Serial.printf("Published: %s \n",payload);
 }
 
 // Subscribe 

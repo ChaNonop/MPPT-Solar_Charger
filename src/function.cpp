@@ -8,7 +8,7 @@ Button::Button(const Config& config)
     _lastInterruptTime(0),
     _Butonn_callback(nullptr)
   {
-    // Constructor body ว่างได้ถ้า init list ครบแล้ว
+    // Constructor body ว่าง
   }
 
 // ===Class Button===
@@ -16,7 +16,6 @@ void Button::button_begin(void (*button_isr)()){
   pinMode(_config.Button_Pin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(_config.Button_Pin), button_isr, _config.button_edge);
 
-  // แสดงข้อความว่าปุ่มพร้อมใช้งาน
   Serial.print("Button initialized: ");
   Serial.print(_config.Button_Name);
   Serial.print(" on GPIO ");
@@ -64,6 +63,7 @@ bool Button::isPressed() {
 
   _buttonState = false; // Clear flag
   portEXIT_CRITICAL(&mux);
+  return s;
 }
 
 // ===Class Sensor===
@@ -126,9 +126,9 @@ float Sensor::rawToTemp(int raw) {
   return pinVoltage * 100.0; 
 }
 
-float Sensor::Power(float voltage, float current) {
-  return voltage * current;
-}
+// float Sensor::Power(float voltage, float current) {
+//   return voltage * current;
+// }
 
 void Sensor::Print_sensor() {
   Serial.printf("Solar: %.2fV | Bat: %.2fV | Curr: %.2fA | Pwr: %.2fW | DutyCycle: %d%\n", 

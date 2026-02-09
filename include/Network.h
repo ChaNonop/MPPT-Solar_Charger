@@ -8,9 +8,7 @@
 #include <WiFiUdp.h>
 
 #include <U8g2lib.h>
-
-#include "config.h"
-
+#include <secret.h>
 class Network {
 private:
   WiFiClient _espClient;
@@ -22,10 +20,10 @@ private:
 public:
   Network();
   void ntp_setup();
-  void conncetWifi();           // intentionally keep typo to match main.cpp usage
+  void connectWifi();      
   void connectMQTT();
   void loop_connect_MQTT();
-  void send_Sensor(float volatge_solar,float voltage_battery,float current, float temp, float power, bool buttonState);
+  void Publish_Sensor(float volatge_solar,float voltage_battery,float current, float temp, int power, bool buttonState);
   
   void Callback(char* topic, uint8_t* payload, unsigned int length); // made public
 };

@@ -7,14 +7,13 @@
    
 #define DEVICE_ID "ESP32_Board"
 
-// สร้าง Objects
 Sensor sensor;
 Network network;
 Led_state led(led_Pin);
 
 
 //===== สร้าง BUTTON OBJECTS =====
-// สร้าง object จาก config ที่กำหนดไว้ใน PinConfig.h
+// สร้าง object จาก config
 Button buttonUp(PinConfig::ButtonUp);
 Button buttonDown(PinConfig::ButtonDown);
 Button buttonLeft(PinConfig::Buttonleft);
@@ -24,8 +23,7 @@ unsigned long lastMsg = 0;
 const long interval = 10000; // 10 วินาที
 
 // --- ISR Wrapper Functions ---
-// เราต้องแยกฟังก์ชัน ISR ของแต่ละปุ่ม เพื่อให้รู้ว่าปุ่มไหนถูกกด
-// เพราะ attachInterrupt ต้องการฟังก์ชัน void func() ที่ไม่มี parameter
+// แยกฟังก์ชัน ISR ของแต่ละปุ่ม 
 void IRAM_ATTR ISR_Up() { buttonUp.handleInterrupt();}
 void IRAM_ATTR ISR_Down() { buttonDown.handleInterrupt();}
 void IRAM_ATTR ISR_Left() { buttonLeft.handleInterrupt();}
@@ -34,9 +32,11 @@ void IRAM_ATTR ISR_Right() { buttonRight.handleInterrupt();}
 
 void setup() {
   Serial.begin(115200);
-    while (!Serial){
-    delay(10);
-  }
+  //   while (!Serial){
+  //   delay(10);
+  // }
+  delay(100);
+
   // 1. Setup Buttons & Attach ISRs
   buttonUp.button_begin(ISR_Up);
   buttonDown.button_begin(ISR_Down);
@@ -49,7 +49,7 @@ void setup() {
 
   //4. setup Network
   WiFi.mode(WIFI_STA);
-  network.conncetWifi(); 
+  network.connectWifi(); 
   network.connectMQTT();
   network.ntp_setup();
 }
@@ -68,15 +68,17 @@ void loop(){
 
 
   unsigned long now = millis();
-    if (now - lastMsg > interval) { //จับเวลาส่งข้อมูลทุก ๆ 10 วินาที
+    if (now - lastMsg > interval) { 
         lastMsg = now;
-        // ดึงข้อมูลจริงจาก Sensor Class
+
+        // ดึงข้อมูลจาก Sensor Class
         SensorData data = sensor.getData();
+        
         // Debug ใน Serial
         sensor.Print_sensor();
         bool btn_state = buttonUp.isPressed();
 
-        network.Publish_Sensor(data.Voltage_battery, data.Current, data.Temp,(uint16_t)data.Power, btn_state);
+        network.Publish_Sensor(data.Voltage_solar,data.Voltage_battery, data.Current, data.Temp,(int)data.Power, btn_state);
         led.toggle();
       }
 }

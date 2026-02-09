@@ -7,7 +7,6 @@
 #define NUM_SENSOR 4
 
 struct SensorData { //ค่าที่จะส่งผ่าน broker
-  // int rawValue;
   float Voltage_solar;
   float Voltage_battery;
   float Current;
@@ -47,7 +46,6 @@ private:
   SensorData _currentData;
   const uint8_t sensorPins[NUM_SENSOR] = {VOLTAGE_SOLAR_PIN, VOLTAGE_BATTERY_PIN, CURRENT_PIN, TEMP_PIN};
 
-  // Helper functions (Private)
   int readAverage(uint8_t pin, uint8_t count);
   float rawToVoltage(int raw, float multiplier = 1.0); // Multiplier คืออัตราทด Voltage Divider
   float rawToCurrent(int raw);

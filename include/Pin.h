@@ -31,25 +31,25 @@
       .Button_Pin = 18, //ใช้ GPIO 18 
       .Button_Name = "Button Up", //ตั้งชื่อปุ่ม
       .debounceDelay = 50, // debounce 50 ms
-      .button_edge = FALLING // ตรวขอบขาลง
+      .button_edge = FALLING // ตรวจขอบขาลง
     };
   const Config ButtonDown ={
       .Button_Pin = 17, //ใช้ GPIO 17
       .Button_Name = "Button Down", //ตั้งชื่อปุ่ม
       .debounceDelay = 50,
-      .button_edge = FALLING // ตรวขอบขาลง    
+      .button_edge = FALLING // ตรวจขอบขาลง    
   };
   const Config Buttonleft ={
     .Button_Pin = 16, //ใช้ GPIO 16
     .Button_Name = "Button Left", //ตั้งชื่อปุ่ม
     .debounceDelay = 50, 
-    .button_edge = FALLING // ตรวขอบขาลง  
+    .button_edge = FALLING // ตรวจขอบขาลง  
   };
     const Config ButtonRight ={
     .Button_Pin = 15, //ใช้ GPIO 15
     .Button_Name = "Button Right", //ตั้งชื่อปุ่ม
     .debounceDelay = 50, 
-    .button_edge = FALLING // ตรวขอบขาลง  
+    .button_edge = FALLING // ตรวจขอบขาลง  
   };
 }
 #endif
