@@ -12,14 +12,13 @@ struct SensorData { //ค่าที่จะส่งผ่าน broker
   float Voltage_battery;
   float Current;
   float Temp;
-  int Power;
+  float Power;
   int dutyCycle;
 };
 
 class Button{
 private:
   Config _config;
-  volatile bool _pressed;
   volatile unsigned long _buttonState;; //เวลาที่เกิด interrupt
   volatile unsigned long _lastInterruptTime;
 
@@ -46,14 +45,13 @@ public:
 class Sensor {
 private:
   SensorData _currentData;
-  const uint8_t sensorPins[NUM_SENSOR];
+  const uint8_t sensorPins[NUM_SENSOR] = {VOLTAGE_SOLAR_PIN, VOLTAGE_BATTERY_PIN, CURRENT_PIN, TEMP_PIN};
 
   // Helper functions (Private)
   int readAverage(uint8_t pin, uint8_t count);
   float rawToVoltage(int raw, float multiplier = 1.0); // Multiplier คืออัตราทด Voltage Divider
   float rawToCurrent(int raw);
   float rawToTemp(int raw);
-  int Power(int voltage, int current);
 
 public:
   Sensor();

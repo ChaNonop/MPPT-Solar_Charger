@@ -86,7 +86,7 @@ void Network::loop_connect_MQTT() {
   _timeClient->update();
 }
 
-void Network::Publish_Sensor(float volatge_solar,float voltage_battery,float current, float temp, int power, bool buttonState) {
+void Network::send_Sensor(float volatge_solar,float voltage_battery,float current, float temp, int power, bool buttonState) {
 
   char payload[200];
 
@@ -95,7 +95,7 @@ void Network::Publish_Sensor(float volatge_solar,float voltage_battery,float cur
 
   // Send Data Json format
   int len = snprintf(payload, sizeof(payload), 
-            "{\"Voltage_solar\":%.2f,\"Voltage_battery\":%.2f,\"Current\":%.2f,\"Temp\":%.2f,\"Power\":%dv\":%.2f,\"button_state\":%u,\"time(ms)\":%lu}",
+            "{\"Voltage_solar\":%.2f,\"Voltage_battery\":%.2f,\"Current\":%.2f,\"Temp\":%.2f,\"Power\":%.2f,\"button_state\":%d,\"time(ms)\":%lu}",
              volatge_solar, voltage_battery, current, temp, power,buttonState ? 1 : 0, epochTime);
   
   _client.publish("/MyProject/sensor", payload, (unsigned int)len);

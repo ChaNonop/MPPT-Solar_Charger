@@ -2,18 +2,12 @@
 #define NETWORK_H
 
 #include <Arduino.h>
-
-#ifdef ESP32
-  #include <WiFi.h>
-#elif defined(ESP8266)
-  #include <ESP8266WiFi.h>
-#endif
-
+#include <WiFi.h>
 #include <PubSubClient.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-// #include <U8g2lib.h>
+#include <U8g2lib.h>
 
 #include "config.h"
 
@@ -23,7 +17,6 @@ private:
   PubSubClient _client;
   WiFiUDP _ntp;
   NTPClient* _timeClient; // ใช้ Pointer เพื่อจัดการ Object
-  unsigned long epochTime;
   void reconnectMQTT();
 
 public:
@@ -32,7 +25,8 @@ public:
   void conncetWifi();           // intentionally keep typo to match main.cpp usage
   void connectMQTT();
   void loop_connect_MQTT();
-  void Publish_Sensor(float volatge_solar,float voltage_battery,float current, float temp, int power, bool buttonState);
+  void send_Sensor(float volatge_solar,float voltage_battery,float current, float temp, float power, bool buttonState);
+  
   void Callback(char* topic, uint8_t* payload, unsigned int length); // made public
 };
 

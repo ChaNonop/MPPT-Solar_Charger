@@ -68,7 +68,7 @@ bool Button::isPressed() {
 
 // ===Class Sensor===
 Sensor::Sensor(){
-  _currentData= {0.0f, 0.0f, 0.0f, 0.0f, 0, 0};
+  _currentData= {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0};
 }
 
 void Sensor::begin() {
@@ -92,6 +92,10 @@ void Sensor::update() {
   _currentData.Voltage_battery = rawToVoltage(rawBat, 5.0);    // สมมติว่า Divider 5 เท่า (แก้ตามจริง)
   _currentData.Current        = rawToCurrent(rawCurr);
   _currentData.Temp           = rawToTemp(rawTemp);
+}
+
+SensorData Sensor::getData() const {
+  return _currentData;
 }
 
 int Sensor::readAverage(uint8_t pin, uint8_t count) {
@@ -122,12 +126,8 @@ float Sensor::rawToTemp(int raw) {
   return pinVoltage * 100.0; 
 }
 
-int Sensor::Power(int voltage, int current) {
+float Sensor::Power(float voltage, float current) {
   return voltage * current;
-}
-
-SensorData Sensor::getData() const {
-  return _currentData
 }
 
 void Sensor::Print_sensor() {
