@@ -5,6 +5,7 @@
 #include "Pin.h"
 
 #define NUM_SENSOR 4
+// #define Volatge_LEFEPO4 14.4
 
 struct SensorData { //ค่าที่จะส่งผ่าน broker
   // int rawValue;
@@ -12,8 +13,8 @@ struct SensorData { //ค่าที่จะส่งผ่าน broker
   float Voltage_battery;
   float Current;
   float Temp;
-  uint8_t Power();
-  uint8_t Percentage_battery();
+  int Power;
+  int dutyCycle;
 };
 
 class Button{
@@ -42,29 +43,24 @@ public:
   bool isPressed() ;   // เช็คว่าปุ่มถูกกดหรือไม่
 }; 
 
-// === Class Snesor ===
+// === Class Sensor ===
 class Sensor {
 private:
+  SensorData _currentData;
   const uint8_t sensorPins[NUM_SENSOR];
-  int sampleBuffer[SAMPLE_COUNT];
 
-  const float refVoltage = VOLTAGE_REFERENCE;
-  const float adcResolution = 4095.0f;
-
-  bool stete;
-  void readSensorSamples(uint8_t pin,int*buffer,uint8_t count);
-  int calculateAverage(const int*sample ,uint8_t count);
-
-  float convertToVoltage(int rawValue);
-  float convertToCurrent(int rawValue);
-  float convertToTemp(int rawValue);
+  // Helper functions (Private)
+  int readAverage(uint8_t pin, uint8_t count);
+  float rawToVoltage(int raw, float multiplier = 1.0); // Multiplier คืออัตราทด Voltage Divider
+  float rawToCurrent(int raw);
+  float rawToTemp(int raw);
+  int Power(int voltage, int current);
 
 public:
   Sensor();
   void begin();
   void update();
-  void SensorData* getSensorData(uint8_t index) const;
-  void SensorData* getAllSensorData() const;
+  SensorData getData() const;
 
   void Print_sensor();
   void Display_sensor();
@@ -74,16 +70,19 @@ public:
   Algorithm();
   void MPPT_Process();
   void Control_PWM();
-}
-// class Led_state {
-// public:
-//   Led_state(uint8_t ledPin);
-//   void begin();
-//   void set(bool on);
-//   void toggle();
-// private:
-//   uint8_t _ledPin;
-//   bool _ledState;
-// };
+};
+
+
+// === Class Led ===
+class Led_state {
+public:
+  Led_state(uint8_t ledPin);
+  void begin();
+  void set(bool on);
+  void toggle();
+private:
+  uint8_t _ledPin;
+  bool _ledState;
+};
 
 #endif 

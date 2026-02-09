@@ -8,16 +8,10 @@
 #define POT_PIN 34      
 #define DEVICE_ID "ESP32_Board"
 
-// #elif defined(ESP8266)
-//   #include <ESP8266WiFi.h>
-//   #define POT_PIN A0       
-//   #define DEVICE_ID "ESP8266_Board"
-// #endif
-
 // สร้าง Objects
 Sensor sensor;
 Network network;
-Led_state led(led_Pin);
+// Led_state led(led_Pin);
 
 
 //===== สร้าง BUTTON OBJECTS =====
@@ -33,18 +27,10 @@ const long interval = 10000; // 10 วินาที
 // --- ISR Wrapper Functions ---
 // เราต้องแยกฟังก์ชัน ISR ของแต่ละปุ่ม เพื่อให้รู้ว่าปุ่มไหนถูกกด
 // เพราะ attachInterrupt ต้องการฟังก์ชัน void func() ที่ไม่มี parameter
-void IRAM_ATTR ISR_Up() {
-  buttonUp.handleInterrupt();
-}
-void IRAM_ATTR ISR_Down() {
-  buttonDown.handleInterrupt();
-}
-void IRAM_ATTR ISR_Left() {
-  buttonLeft.handleInterrupt();
-}
-void IRAM_ATTR ISR_Right() {
-  buttonRight.handleInterrupt();
-}
+void IRAM_ATTR ISR_Up() { buttonUp.handleInterrupt();}
+void IRAM_ATTR ISR_Down() { buttonDown.handleInterrupt();}
+void IRAM_ATTR ISR_Left() { buttonLeft.handleInterrupt();}
+void IRAM_ATTR ISR_Right() { buttonRight.handleInterrupt();}
 
 
 void setup() {
@@ -85,11 +71,14 @@ void loop(){
   unsigned long now = millis();
     if (now - lastMsg > interval) { //จับเวลาส่งข้อมูลทุก ๆ 10 วินาที
         lastMsg = now;
-        // ตัวอย่าง: เช็คสถานะปุ่มใดปุ่มหนึ่งเพื่อส่งขึ้น MQTT (หรือจะส่ง flag อื่นๆ)
+        // ดึงข้อมูลจริงจาก Sensor Class
+        SensorData data = sensor.getData();
+        // Debug ใน Serial
+        sensor.Print_sensor();
         bool btn_state = buttonUp.isPressed();
 
-        network.Publish_Sensor(Resistor,voltage,btn_state);
-        led.toggle();
+        network.Publish_Sensor(data.Voltage_battery, data.Current, data.Temp,(uint16_t)data.Power, btn_state);
+        // led.toggle();
       }
 }
 

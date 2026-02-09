@@ -68,88 +68,75 @@ bool Button::isPressed() {
 
 // ===Class Sensor===
 Sensor::Sensor(){
-  : sensorPins{VOLTAGE_SOLAR_PIN, VOLTAGE_BATTERY_PIN, CURRENT_PIN, TEMP_PIN},
-    refVoltage(VOLTAGE_REFERENCE),
-    adcResolution(ADC_VALUE),
-    stete(false)
-}
-  {
-    memset(sampleValue, 0, sizeof(sampleValue));
-    memset(sensorBuffer, 0, sizeof(sensorBuffer));
+  _currentData= {0.0f, 0.0f, 0.0f, 0.0f, 0, 0};
 }
 
 void Sensor::begin() {
-  update();
-  for (uint8_t i = 0 ; i < NUM_SENSOR ; i++) {
+  for (int i = 0 ; i < NUM_SENSOR ; i++) {
     pinMode(sensorPins[i], INPUT);
   }
-  state = true;
+  update();
 }
 
 void Sensor::update() {
-  for(int i = 0; i < NUM_SENSOR; i++){
-    readSensorSamples(sensorPins[i], sampleBuffer, SAMPLE_COUNT);
-    int avgRaw = calculateAverage(sampleBuffer, SAMPLE_COUNT);
-    float voltage_solar = convertToVoltage(avgRaw);
-    float voltage_battery = convertToVoltage(avgRaw);
-    float current = convertToCurrent(avgRaw);
-    float temp = convertToTemp(avgRaw);
-  }
-  // SensorData[i].rawValue = avgRaw;
-  SensorData[i].Voltage_Solar = voltage;
-  SensorData[i].Voltage_battery = voltage;
-  SensorData[i].Current = current;
-  SensorData[i].Temp = temp;
-  }
+    // 1. อ่านค่า Raw Data และหาค่าเฉลี่ย
+  int rawSolar = readAverage(VOLTAGE_SOLAR_PIN, SAMPLE_COUNT);
+  int rawBat   = readAverage(VOLTAGE_BATTERY_PIN, SAMPLE_COUNT);
+  int rawCurr  = readAverage(CURRENT_PIN, SAMPLE_COUNT);
+  int rawTemp  = readAverage(TEMP_PIN, SAMPLE_COUNT);
+  
+  // 2. แปลงค่า (Calibration)
+  // หมายเหตุ: คูณ Multiplier ตามวงจร Voltage Divider ที่ใช้จริง
+  // เช่น ถ้าใช้ R1=30k, R2=7.5k อัตราส่วนคือ 5.0 -> ต้องใส่ 5.0 เป็น argument ตัวที่สอง
+  _currentData.Voltage_solar   = rawToVoltage(rawSolar, 11.0); // สมมติว่า Divider 11 เท่า (แก้ตามจริง)
+  _currentData.Voltage_battery = rawToVoltage(rawBat, 5.0);    // สมมติว่า Divider 5 เท่า (แก้ตามจริง)
+  _currentData.Current        = rawToCurrent(rawCurr);
+  _currentData.Temp           = rawToTemp(rawTemp);
 }
-void Sensor::readSensorSamples(uint8_t pin,int*buffer,uint8_t count){
-  for (int i = 0; i < count; i++) {
-    buffer[i] = analogRead(pin);
-    delayMicroseconds(100); // หน่วงเวลาเล็กน้อยระหว่างการอ่าน
-  }
-}
-int Sensor::calculateAverage(const int*sample ,uint8_t count){
+
+int Sensor::readAverage(uint8_t pin, uint8_t count) {
   long sum = 0;
   for (int i = 0; i < count; i++) {
-    sum += sample[i];
+    sum += analogRead(pin);
+    delayMicroseconds(100); // รอ ADC 
   }
-  return sum / count;
+  return (count > 0) ? (sum / count) : 0;
 }
 
-float Sensor::convertToVoltage(int rawValue) {
-  return (rawValue / adcResolution) * refVoltage;
-}
-uint8_t Sensor::Power() {
-  return convertToVolatage * convertToCurrent;
-}
-uint8_t Sensor::Percentage_battery() {
-  return ;
+float Sensor::rawToVoltage(int raw, float multiplier) {
+  // ESP32 ADC: 0-4095 -> 0-3.3V
+  float pinVoltage = (raw / (float)ADC_VALUE) * VOLTAGE_REFERENCE;
+  return pinVoltage * multiplier;
 }
 
-
-const SensorData* Sensor::getSensorData(uint8_t index) const {
-  if (index <= NUM_SENSOR) {
-    return nullptr;
-  }
-  return &SensorData[index];
+float Sensor::rawToCurrent(int raw) {
+  // ต้องแก้สมการตาม Sensor กระแสที่ใช้ (เช่น ACS712 หรือ Shunt Resistor)
+  // ตัวอย่าง: (Vout - Offset) / Sensitivity
+  float pinVoltage = (raw / (float)ADC_VALUE) * VOLTAGE_REFERENCE;
+  return (pinVoltage - 2.5) / 0.066;
 }
 
-const SensorData* Sensor::getAllSensorData() const {
-  return SensorData;
+float Sensor::rawToTemp(int raw) {
+  // ตัวอย่างแปลงค่าอุณหภูมิ (NTC หรือ LM35)
+  float pinVoltage = (raw / (float)ADC_VALUE) * VOLTAGE_REFERENCE;
+  return pinVoltage * 100.0; 
 }
+
+int Sensor::Power(int voltage, int current) {
+  return voltage * current;
+}
+
+SensorData Sensor::getData() const {
+  return _currentData
+}
+
 void Sensor::Print_sensor() {
-  for (int i = 0; i < NUM_SENSOR; i++) {
-    Serial.print("Sensor ");
-    Serial.print(i);
-    Serial.print(": Raw Value = ");
-    Serial.print(SensorData[i].rawValue);
-    Serial.print(", Voltage = ");
-    Serial.print(SensorData[i].Voltage);
-    Serial.print(", Current = ");
-    Serial.print(SensorData[i].Current);
-    Serial.print(", Temp = ");
-    Serial.println(SensorData[i].Temp);
-  }
+  Serial.printf("Solar: %.2fV | Bat: %.2fV | Curr: %.2fA | Pwr: %.2fW | DutyCycle: %d%\n", 
+                _currentData.Voltage_solar, 
+                _currentData.Voltage_battery, 
+                _currentData.Current, 
+                _currentData.Power,
+                _currentData.dutyCycle);
 }
 void Sensor::Display_sensor() {}
 
@@ -159,108 +146,17 @@ void Algorithm::MPPT_Process(){}
 void Algorithm::Control_PWM(){}
 
 
+//== Class led ===
+Led_state::Led_state(uint8_t ledPin) : _ledPin(ledPin), _ledState(false){}
 
+void Led_state::begin(){ 
+    pinMode(_ledPin, OUTPUT);
+    digitalWrite(_ledPin, HIGH); 
+}
+void Led_state::set(bool on) {
+  digitalWrite(_ledPin, on ? LOW : HIGH); // active LOW 
+}
 
-// void Sensor::Read_Sensor() {
-//   int samples[Num_Pin][Num_Sample];
-
-//   // อ่านค่า sampling NUM_SAMPLES ครั้ง
-//   for (int sample = 0; sample < Num_Sample; sample++) {
-//     for (int sensor = 0; sensor < Num_Pin; sensor++) {
-//       samples[sensor][sample] = analogRead(Pin_sensor[sensor]);
-//     }
-//     delayMicroseconds(100); // หน่วงเวลาเล็กน้อยระหว่างการอ่าน
-//   }
-//   // ประมวลผลแต่ละ sensor
-//   for (int sensor = 0; sensor < Num_Pin; sensor++) {
-//     sensorValues[sensor] = NoiseReduction(samples[sensor], Num_Sample);
-//   }
-// }
-//   // uint16_t raw_V_Battery = analogRead(Voltage_Pin_Battery);
-//   // uint16_t raw_V_Solar = analogRead(Voltage_Pin_Solar);
-//   // uint16_t raw_Current = analogRead(Current_Pin);
-//   // uint16_t raw_Temp = analogRead(Temp_Pin);
-  
-//   // return raw_V_Battery, raw_V_Solar, raw_Current, raw_Temp;
-
-// float Sensor::NoiseReduction(int*data, int size){
-//   // 1. เรียงลำดับข้อมูล
-//   int sortedData[Num_Sample];
-//   for (int i = 0; i < size; i++) {
-//     sortedData[i] = data[i];
-//   }
-//   bubbleSort(sortedData, size);
-  
-//   // 2. ตัดค่าสูงสุดและต่ำสุดออก (Trimmed Mean)
-//   int trimCount = 2; // ตัดข้างละ 2 ค่า
-//   long sum = 0;
-//   int count = 0;
-  
-//   for (int i = trimCount; i < size - trimCount; i++) {
-//     sum += sortedData[i];
-//     count++;
-//   }
-  
-//   // 3. คำนวณค่าเฉลี่ย
-//   return (count > 0) ? (sum / count) : 0;
-// }
-
-// // ฟังก์ชันเรียงลำดับแบบ Bubble Sort
-// void bubbleSort(int* arr, int size) {
-// for (int i = 0; i < size - 1; i++) {
-//   for (int j = 0; j < size - i - 1; j++) {
-//     if (arr[j] > arr[j + 1]) {
-//       int temp = arr[j];
-//       arr[j] = arr[j + 1];
-//       arr[j + 1] = temp;
-//     }
-//   }
-// }
-// }
-
-
-// float Sensor::Convert_voltage() {
-//   int raw = analogRead(_rPin);
-// #ifdef ESP32
-//   float v = (raw / 4095.0f) * 3.3f;
-// #else
-//   float v = (raw / 1023.0f) * 3.3f;
-// #endif
-//   return v;
-// }
-// float Sensor::Voltage_solar() {
-//   int raw = analogRead(Voltage_Pin_Solar);
-// }
-// float Sensor::Voltage_battery() {
-//   int raw = analogRead(Voltage_Pin_Battery);
-// }
-// float Sensor::read_Current() {
-//   int raw = analogRead(Current_Pin);
-// }
-// float Sensor::read_temp() {
-//   int raw = analogRead(Temp_Pin);
-// }
-
-
-// uint8_t Sensor::read_Current() {
-//   return 0; // คืนค่า 0 ไปก่อน
-// }
-
-// uint8_t Sensor::read_temp() {
-//   return 0; // คืนค่า 0 ไปก่อน
-// }
-
-// == Class led ===
-// Led_state::Led_state(uint8_t ledPin) : _ledPin(ledPin), _ledState(false){}
-
-// void Led_state::begin(){ 
-//     pinMode(_ledPin, OUTPUT);
-//     digitalWrite(_ledPin, HIGH); 
-// }
-// void Led_state::set(bool on) {
-//   digitalWrite(_ledPin, on ? LOW : HIGH); // active LOW 
-// }
-
-// void Led_state::toggle() {
-//     set(!_ledState);
-// }
+void Led_state::toggle() {
+    set(!_ledState);
+}
